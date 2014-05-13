@@ -3,7 +3,7 @@
 #
 #	Resource Agent for AWS EC2 ENI
 #
-# Copyright (c) 2004 mooapp All Rights Reserved.
+# Copyright (c) 2014 mooapp All Rights Reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as
@@ -54,7 +54,7 @@ The network interface id of ENI
 <content type="string" />
 </parameter>
 
-<parameter name="device_index" required="1">
+<parameter name="device_index">
 <longdesc lang="en">
 The index of the device for the network interface attachment.
 </longdesc>
@@ -62,12 +62,44 @@ The index of the device for the network interface attachment.
 <content type="integer" default="1" />
 </parameter>
 
-<parameter name="wait" required="1">
+<parameter name="device_name">
+<longdesc lang="en">
+The name of the device for the network interface attachment.
+</longdesc>
+<shortdesc lang="en">device index</shortdesc>
+<content type="string" default="eth1" />
+</parameter>
+
+<parameter name="gateway" required="1">
+<longdesc lang="en">
+The gateway of the device for the network interface attachment.
+</longdesc>
+<shortdesc lang="en">gateway</shortdesc>
+<content type="string" />
+</parameter>
+
+<parameter name="wait">
 <longdesc lang="en">
 The wait time after starting and stopping interface in order to handle delay.
 </longdesc>
 <shortdesc lang="en">wait</shortdesc>
 <content type="integer" default="30" />
+</parameter>
+
+<parameter name="table_id">
+<longdesc lang="en">
+The table id for multi homing.
+</longdesc>
+<shortdesc lang="en">table id</shortdesc>
+<content type="integer" default="100" />
+</parameter>
+
+<parameter name="table_priority">
+<longdesc lang="en">
+The table priority for multi homing.
+</longdesc>
+<shortdesc lang="en">table priority</shortdesc>
+<content type="integer" default="100" />
 </parameter>
 
 </parameters>
@@ -100,6 +132,10 @@ eni_start() {
     fi
     /usr/bin/aws ec2 attach-network-interface --network-interface-id ${OCF_RESKEY_interface_id} --instance-id ${instance_id} --device-index ${OCF_RESKEY_device_index}
     sleep ${OCF_RESKEY_wait}
+
+    private_ip=`ifconfig ${OCF_RESKEY_device_name} | grep "inet addr:" | awk -F: '{ print $2 }' | awk '{ print $1 }'`
+    ip rule add from ${private_ip} table ${OCF_RESKEY_table_id} prio ${OCF_RESKEY_table_priority}
+    ip route add via ${OCF_RESKEY_gateway} dev eth1 src ${private_ip} table ${OCF_RESKEY_table_id}
 }
 
 eni_stop() {

@@ -135,12 +135,13 @@ eni_start() {
 
     private_ip=`ifconfig ${OCF_RESKEY_device_name} | grep "inet addr:" | awk -F: '{ print $2 }' | awk '{ print $1 }'`
     ip rule add from ${private_ip} table ${OCF_RESKEY_table_id} prio ${OCF_RESKEY_table_priority}
-    ip route add via ${OCF_RESKEY_gateway} dev eth1 src ${private_ip} table ${OCF_RESKEY_table_id}
+    ip route add via ${OCF_RESKEY_gateway} dev ${OCF_RESKEY_device_name} src ${private_ip} table ${OCF_RESKEY_table_id}
 }
 
 eni_stop() {
     eni_monitor
     if [ $? =  $OCF_SUCCESS ]; then
+        ip rule del table ${OCF_RESKEY_table_id}
         attachment_id=`/usr/bin/aws ec2 describe-network-interfaces --network-interface-ids ${OCF_RESKEY_interface_id} --filter "Name=attachment.instance-id, Values=${instance_id}" --output json | grep \"AttachmentId\": | sed -e 's/'.*\"AttachmentId\"':\s\"\(.*\)\"\,\s$/\1/'`
         /usr/bin/aws ec2 detach-network-interface --attachment-id ${attachment_id} 
         sleep ${OCF_RESKEY_wait}

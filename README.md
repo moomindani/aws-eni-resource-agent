@@ -54,16 +54,19 @@ property \
     no-quorum-policy="ignore" \
     stonith-enabled="false" \
     crmd-transition-delay="0s"
-
+ 
 primitive eni ocf:heartbeat:eni \
     params \
         interface_id="eni-2a718a5d" \
         device_index="1" \
-        wait="30" \
-    op start   timeout="60s" interval="0s"  on-fail="stop" \
+        device_name="eth1" \
+        gateway="172.31.0.1" \
+        wait="60" \
+        table_id="100" \
+        table_priority="100" \
+    op start   timeout="120s" interval="0s"  on-fail="stop" \
     op monitor timeout="60s" interval="10s" on-fail="restart" \
-    op stop    timeout="60s" interval="0s"  on-fail="block"
-```
+    op stop    timeout="120s" interval="0s"  on-fail="block"```
 
 ## Parameter
 
@@ -71,4 +74,9 @@ Name                       | Description
 -------------------------- | -------------------------------------------------
 interface_id               | The network interface id of ENI.
 device_index               | The index of the device for the network interface attachment.
+device_name                | The name of the device for the network interface attachment.
+gateway                    | The gateway of the device for the network interface attachment.
 wait                       | The wait time after starting and stopping interface in order to handle delay.
+table_id                   | The table id for multi homing.
+table_priority             | The table priority for multi homing.
+
